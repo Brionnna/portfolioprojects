@@ -1,0 +1,99 @@
+--View our dataset--
+SELECT*
+FROM imdbCopyofIMDBTop250MoviesCleanedIMDBTop250Movies
+
+--changing table name--CopyofIMDBTop250MoviesCleanedIMDBTop250Movies
+ALTER TABLE imdbCopyofIMDBTop250MoviesCleanedIMDBTop250Movies RENAME TO Movies
+
+SELECT *
+FROM Movies
+
+--Top 5 budgeted movies--
+SELECT name, budget
+FROM Movies
+ORDER BY budget DESC
+LIMIT 5
+
+--princess mononoke update--
+UPDATE Movies
+SET budget = REPLACE(budget, 2400000000, 23500000)
+
+--3 idiots update--
+UPDATE Movies
+SET budget = REPLACE(budget, 550000000, 6700000)
+
+--updated Top 5 budgeted movies--
+SELECT name, budget
+FROM Movies
+ORDER BY budget DESC
+LIMIT 5
+
+--top 5 rated movies--
+SELECT name, rating
+FROM Movies
+ORDER BY rating DESC
+LIMIT 5
+
+--top 5 box office hits--
+SELECT name, box_office
+FROM Movies
+ORDER BY box_office DESC
+LIMIT 5
+
+--top 10 movies with highest proft--
+SELECT name, budget, box_office, (box_office-budget) AS profit
+FROM Movies
+ORDER BY Profit DESC
+LIMIT 10
+
+--most popular genres--
+SELECT genre, COUNT(*) AS genre_count
+FROM (
+ SELECT TRIM(value) AS genre
+  FROM Movies
+  CROSS JOIN json_each('["' || REPLACE(genre, ',', '","') || '"]')
+)
+GROUP BY genre
+ORDER BY genre_count DESC
+LIMIT 5
+
+--top 10 directors--
+SELECT directors, COUNT(*) AS Number_of_directors
+FROM Movies 
+GROUP BY directors
+ORDER BY Number_of_directors DESC
+LIMIT 10
+
+--how many movies in each rating category--
+SELECT certificate, COUNT(*) AS Total
+FROM Movies 
+GROUP BY certificate
+ORDER BY Total DESC
+
+--best years for movies--
+SELECT year, COUNT(*) as movie_count
+FROM movies
+GROUP BY year
+ORDER BY movie_count DESC
+LIMIT 5
+--how many movies in each decade--
+SELECT 
+  FLOOR(year / 10) * 10 AS decade_start,
+  COUNT(*) AS movie_count
+FROM movies
+GROUP BY decade_start
+ORDER BY decade_start;
+--most popular movie genre in each decade--
+WITH genre_counts AS (
+  SELECT 
+    CAST((year / 10) * 10 AS INTEGER) AS decade_start,
+    genre,
+    COUNT(*) AS genre_count,
+    ROW_NUMBER() OVER(PARTITION BY CAST((year / 10) * 10 AS INTEGER) ORDER BY COUNT(*) DESC) AS genre_rank
+  FROM movies
+  GROUP BY decade_start, genre
+)
+SELECT decade_start, genre, genre_count
+FROM genre_counts
+WHERE genre_rank = 1
+ORDER BY decade_start;
